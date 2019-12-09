@@ -6,6 +6,8 @@ using Microsoft.Extensions.Hosting;
 
 namespace RequestLogger
 {
+    using RequestLogger.Middleware;
+
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -32,7 +34,7 @@ namespace RequestLogger
             app.UseMiddleware<RequestResponseLoggingMiddleware>();
 
             app.UseRouting();
-            
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

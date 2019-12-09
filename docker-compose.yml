@@ -1,0 +1,33 @@
+version: '3.5'
+
+services:
+
+  request-logger:
+    build:
+      context: ./RequestLogger
+      dockerfile: Dockerfile
+      # args:
+      #   buildno: 1  
+    container_name: requestlogger
+    restart: always
+    image: coenm/requestlogger
+    networks:
+      - ha-public
+    ports:
+      - "8088:80"
+    labels:
+      - "treafik.enable=true"
+      - "traefik.docker.network=rpi-bridge"
+      # - "traefik.http.routers.requestlogger-r.rule=Host(`ha.munckhof.net`)"
+      # - "traefik.http.services.requestlogger-s.loadbalancer.server.port=8123"
+      #- "traefik.http.middlewares.whilelist-only-me.ipwhitelist.sourcerange=127.0.0.1/32, 10.10.10.0/24, 84.82.202.209, 212.61.101.2, 86.84.115.140"
+      # Apply the middleware named `whilelist-only-me` (provided by @file) to the router named `requestlogger-r`
+      # - "traefik.http.routers.requestlogger-r.middlewares=whilelist-only-me@file"
+      # - "traefik.http.routers.requestlogger-r.tls=true"
+      # - "traefik.http.routers.requestlogger-r.tls.certresolver=letsencrypt"
+      # - "traefik.http.routers.requestlogger-r.entrypoints=web-secure"
+
+networks:
+  ha-public:
+     external: 
+       name: rpi-bridge

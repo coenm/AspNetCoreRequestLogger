@@ -1,31 +1,36 @@
-using System;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-
-namespace RequestLogger
+﻿namespace RequestLogger.Middleware
 {
+    using System;
+    using System.IO;
+    using System.Text;
+    using System.Threading.Tasks;
+
+    using Microsoft.AspNetCore.Http;
+    using Microsoft.Extensions.Logging;
+
     public class RequestResponseLoggingMiddleware
     {
+        private readonly ILogger<RequestResponseLoggingMiddleware> _logger;
         private readonly RequestDelegate next;
 
-        public RequestResponseLoggingMiddleware(RequestDelegate next)
+        public RequestResponseLoggingMiddleware(RequestDelegate next, ILogger<RequestResponseLoggingMiddleware> logger)
         {
             this.next = next;
+            _logger = logger;
         }
 
         public async Task Invoke(HttpContext context)
         {
             //First, get the incoming request
             var request = await FormatRequest(context.Request);
+            _logger.LogInformation(request);
 
             //Copy a pointer to the original response body stream
             var originalBodyStream = context.Response.Body;
 
             //Create a new memory stream...
             await using var responseBody = new MemoryStream();
-            
+
             //...and use that for the temporary response body
             context.Response.Body = responseBody;
 
@@ -34,11 +39,7 @@ namespace RequestLogger
 
             //Format the response from the server
             var response = await FormatResponse(context.Response);
-
-            //TODO: Save log to chosen datastore
-
-            Console.WriteLine(request);
-            Console.WriteLine(response);
+            _logger.LogInformation(response);
 
             //Copy the contents of the new memory stream (which contains the response) to the original stream, which is then returned to the client.
             await responseBody.CopyToAsync(originalBodyStream);
@@ -65,11 +66,20 @@ namespace RequestLogger
 
 
             var builder = new StringBuilder(Environment.NewLine);
-            builder.AppendLine("headers:");
-            foreach (var header in request.Headers)
+            builder.AppendLine("----------");
+            builder.AppendLine("-- headers:");
+            foreach (var keyValuePair in request.Headers)
             {
-                builder.AppendLine($"{header.Key}:{header.Value}");
+                builder.AppendLine($"{keyValuePair.Key}:{keyValuePair.Value}");
             }
+            builder.AppendLine("----------");
+
+            builder.AppendLine("-- cookies:");
+            foreach (var keyValuePair in request.Cookies)
+            {
+                builder.AppendLine($"{keyValuePair.Key}:{keyValuePair.Value}");
+            }
+            builder.AppendLine("----------");
 
             return $"{request.Scheme} {request.Host}{request.Path} {request.QueryString} {bodyAsText} {builder}";
         }
