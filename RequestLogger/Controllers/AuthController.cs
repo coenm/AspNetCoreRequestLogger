@@ -7,6 +7,7 @@ namespace RequestLogger.Controllers
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {
+        [HttpPost]
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Get()
